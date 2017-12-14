@@ -90,7 +90,8 @@ def read_corpus_file(path, truncate, side):
     yields: (word, features, nfeat) triples for each line
     """
     with codecs.open(path, "r", "utf-8") as corpus_file:
-        return sents2feats(corpus_file, truncate, side)
+        for output in  sents2feats(corpus_file, truncate, side):
+            yield output
 
 
 def merge_vocabs(vocabs, vocab_size=None):
