@@ -15,14 +15,6 @@ from pprint import pprint
 from six.moves import zip_longest
 from six.moves import zip
 
-parser = argparse.ArgumentParser(
-    description='translate_online.py',
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-opts.add_md_help_argument(parser)
-opts.translate_online_opts(parser)
-
-opt = parser.parse_args()
-
 
 class OnlineTranslator:
     def __init__(self, translator):
@@ -30,7 +22,7 @@ class OnlineTranslator:
         self.translator = translator
 
     def translate(self, sentences, device=-1,
-                  batch_size=32, n_best=3):
+                  batch_size=32, n_best=3, min_score=0):
         self.translator.opt.n_best = n_best
         data = onmt.IO.ONMTDataset(sentences, None,
                                    self.translator.fields,
@@ -93,11 +85,20 @@ def get_translator():
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='translate_online.py',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    opts.add_md_help_argument(parser)
+    opts.translate_online_opts(parser)
+
+    opt = parser.parse_args()
     online_translator = get_translator()
+
     while True:
         sentence = input('> ')
         results = online_translator.translate(sentences=[sentence],
-                                              n_best=opt.n_best)
+                                              n_best=opt.n_best,
+                                              min_score=opt.min_score)
         pprint(results)
 
 
