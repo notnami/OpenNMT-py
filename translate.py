@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from __future__ import division
-from six.moves.builtins import bytes
 import os
 import argparse
 import math
@@ -85,26 +84,26 @@ def main():
                 words = get_src_words(
                     src_sent, translator.fields["src"].vocab.itos)
 
-                os.write(1, bytes('\nSENT %d: %s\n' %
-                                  (sent_number, words), 'UTF-8'))
+                output = '\nSENT {}: {}\n'.format(sent_number, words)
+                os.write(1, output.encode('utf-8'))
 
                 best_pred = n_best_preds[0]
                 best_score = pred_score[0]
-                os.write(1, bytes('PRED %d: %s\n' %
-                                  (sent_number, best_pred), 'UTF-8'))
-                print("PRED SCORE: %.4f" % best_score)
+                output = 'PRED {}: {}\n'.format(sent_number, best_pred)
+                os.write(1, output.encode('utf-8'))
+                print("PRED SCORE: {:.4f}".format(best_score))
 
                 if opt.tgt:
                     tgt_sent = ' '.join(gold_sent)
-                    os.write(1, bytes('GOLD %d: %s\n' %
-                             (sent_number, tgt_sent), 'UTF-8'))
-                    print("GOLD SCORE: %.4f" % gold_score)
+                    output = 'GOLD {}: {}\n'.format(sent_number, tgt_sent)
+                    os.write(1, output.encode('utf-8'))
+                    print("GOLD SCORE: {:.4f}".format(gold_score))
 
                 if len(n_best_preds) > 1:
                     print('\nBEST HYP:')
                     for score, sent in zip(pred_score, n_best_preds):
-                        os.write(1, bytes("[%.4f] %s\n" % (score, sent),
-                                 'UTF-8'))
+                        output = "{:.4f} {}\n".format(score, sent)
+                        os.write(1, output.encode('utf-8'))
 
     report_score('PRED', pred_score_total, pred_words_total)
     if opt.tgt:
