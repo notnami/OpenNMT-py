@@ -250,7 +250,7 @@ def train_opts(parser):
 def translate_opts(parser):
     parser.add_argument('-model', required=True,
                         help='Path to model .pt file')
-    parser.add_argument('-src',   required=True,
+    parser.add_argument('-src', required=False,
                         help="""Source sequence to decode (one line per
                         sequence)""")
     parser.add_argument('-src_img_dir',   default="",
@@ -297,6 +297,13 @@ def translate_opts(parser):
                         (higher = longer generation)""")
     parser.add_argument('-beta', type=float, default=-0.,
                         help="""Coverage penalty parameter""")
+
+
+def translate_online_opts(parser):
+    translate_opts(parser)
+    parser.add_argument('-min_score', type=float, default=0,
+                        help=('If given, and n_best > 1, this will determine'
+                              ' the threshold for additional predictions.'))
 
 
 def add_md_help_argument(parser):

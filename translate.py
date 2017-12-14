@@ -16,14 +16,6 @@ from itertools import takewhile, count
 from six.moves import zip_longest
 from six.moves import zip
 
-parser = argparse.ArgumentParser(
-    description='translate.py',
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-opts.add_md_help_argument(parser)
-opts.translate_opts(parser)
-
-opt = parser.parse_args()
-
 
 def report_score(name, score_total, words_total):
     print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
@@ -124,4 +116,11 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='translate.py',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    opts.add_md_help_argument(parser)
+    opts.translate_opts(parser)
+
+    opt = parser.parse_args()
     main()

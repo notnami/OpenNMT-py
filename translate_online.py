@@ -8,15 +8,18 @@ import torch
 import onmt
 import onmt.IO
 import opts
+import translate
+
+from pprint import pprint
 
 from six.moves import zip_longest
 from six.moves import zip
 
 parser = argparse.ArgumentParser(
-    description='translate.py',
+    description='translate_online.py',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 opts.add_md_help_argument(parser)
-opts.translate_opts(parser)
+opts.translate_online_opts(parser)
 
 opt = parser.parse_args()
 
@@ -28,6 +31,7 @@ class OnlineTranslator:
 
     def translate(self, sentences, device=-1,
                   batch_size=32, n_best=3):
+        self.translator.opt.n_best = n_best
         data = onmt.IO.ONMTDataset(sentences, None,
                                    self.translator.fields,
                                    use_filter_pred=False)
@@ -59,10 +63,17 @@ class OnlineTranslator:
                 n_best_preds = [" ".join(pred) for pred in pred_sents[:n_best]]
                 sent_preds = []
                 for pred, score in zip(n_best_preds, pred_score):
+                    # if a minimum score has been set,
+                    # and we have already given at least one prediction
+                    # stop here
+                    if min_score and sent_preds and score < min_score:
+                        break
                     sent_preds.append({'prediction': pred,
                                        'score': score})
-                sents_preds.append({'sentence': src_sent,
-                                    'predictions': sents_preds})
+                words = translate.get_src_words(
+                    src_sent, self.translator.fields["src"].vocab.itos)
+                sents_preds.append({'sentence': words,
+                                    'predictions': sent_preds})
         return sents_preds
 
 
@@ -80,6 +91,14 @@ def get_translator():
     online_translator = OnlineTranslator(translator)
     return online_translator
 
+
+if __name__ == '__main__':
+    online_translator = get_translator()
+    while True:
+        sentence = input('> ')
+        results = online_translator.translate(sentences=[sentence],
+                                              n_best=opt.n_best)
+        pprint(results)
 
 
 
