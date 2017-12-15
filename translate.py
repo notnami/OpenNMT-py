@@ -14,6 +14,7 @@ from itertools import takewhile, count
 
 from six.moves import zip_longest
 from six.moves import zip
+from tqdm import tqdm
 
 
 def report_score(name, score_total, words_total):
@@ -46,7 +47,7 @@ def main():
         translator.initBeamAccum()
     data = onmt.IO.ONMTDataset(
         opt.src, opt.tgt, translator.fields,
-        use_filter_pred=False)
+        use_filter_pred=False, read_from_file=True)
 
     test_data = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpu,
@@ -54,7 +55,7 @@ def main():
         shuffle=False)
 
     counter = count(1)
-    for batch in test_data:
+    for batch in tqdm(test_data):
         pred_batch, gold_batch, pred_scores, gold_scores, attn, src \
             = translator.translate(batch, data)
         pred_score_total += sum(score[0] for score in pred_scores)
