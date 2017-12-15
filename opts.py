@@ -299,13 +299,6 @@ def translate_opts(parser):
                         help="""Coverage penalty parameter""")
 
 
-def translate_online_opts(parser):
-    translate_opts(parser)
-    parser.add_argument('-min_score', type=float, default=0,
-                        help=('If given, and n_best > 1, this will determine'
-                              ' the threshold for additional predictions.'))
-
-
 def add_md_help_argument(parser):
     parser.add_argument('-md', action=MarkdownHelpAction,
                         help='print Markdown-formatted help text and exit.')
