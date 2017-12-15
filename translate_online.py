@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 from __future__ import division
-import json
 import argparse
+from os import getenv
 import torch
 
 import onmt
@@ -15,6 +15,13 @@ from pprint import pprint
 from six.moves import zip_longest
 from six.moves import zip
 
+from sanic import Sanic, response
+from sanic.request import Request
+from sanic.exceptions import abort, InvalidUsage, ServerError
+from sanic.log import error_logger
+
+app = Sanic(__name__)
+
 
 class OnlineTranslator:
     def __init__(self, translator):
@@ -22,11 +29,13 @@ class OnlineTranslator:
         self.translator = translator
 
     def translate(self, sentences, device=-1,
-                  batch_size=32, n_best=3, min_score=0):
+                  batch_size=32, n_best=3, min_score=0,
+                  round_score=False, round_to=3):
         self.translator.opt.n_best = n_best
         data = onmt.IO.ONMTDataset(sentences, None,
                                    self.translator.fields,
-                                   use_filter_pred=False)
+                                   use_filter_pred=False,
+                                   read_from_file=False)
 
         test_data = onmt.IO.OrderedIterator(dataset=data, device=device,
                                             batch_size=batch_size, train=False,
@@ -58,6 +67,8 @@ class OnlineTranslator:
                     # if a minimum score has been set,
                     # and we have already given at least one prediction
                     # stop here
+                    if round_score:
+                        score = round(score, round_to)
                     if min_score and sent_preds and score < min_score:
                         break
                     sent_preds.append({'prediction': pred,
@@ -84,22 +95,50 @@ def get_translator():
     return online_translator
 
 
+@app.route('/')
+async def home(request: Request):
+    return response.json(
+        {'message': 'The OpenNMT model is live.'})
+
+
+@app.route('/predict/', methods=['POST'])
+async def predict(request: Request):
+    data = request.json
+    if not data:
+        abort(400, 'Got request without JSON data.')
+    documents = data['documents']
+    batch_size = data.get('batch_size', 32)
+    n_best = data.get('n_best', 3)
+    min_score = data.get('min_score', -2.0)
+    round_score = data.get('round_score', False)
+
+    results = online_translator.translate(documents, device=opt.gpu,
+                                          batch_size=batch_size, n_best=n_best,
+                                          min_score=min_score, round_score=round_score)
+    return response.json({'predictions': results})
+
+
+@app.exception([InvalidUsage, ServerError])
+def handle_app_errors(request, exception):
+    error_code = exception.status_code
+    message = (f'Got {exception} ({error_code}) '
+               f'processing the following request:\n{request.body}')
+    error_logger.error(message)
+    return response.json({'status': 'Error',
+                          'message': "The server couldn't process your request."},
+                         status=error_code)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='translate_online.py',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     opts.add_md_help_argument(parser)
-    opts.translate_online_opts(parser)
+    opts.translate_opts(parser)
 
     opt = parser.parse_args()
     online_translator = get_translator()
 
-    while True:
-        sentence = input('> ')
-        results = online_translator.translate(sentences=[sentence],
-                                              n_best=opt.n_best,
-                                              min_score=opt.min_score)
-        pprint(results)
-
-
-
+    host = getenv('NMT_HOST', 'localhost')
+    port = getenv('NMT_PORT', '9999')
+    app.run(host=host, port=port)
