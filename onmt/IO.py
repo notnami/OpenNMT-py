@@ -286,7 +286,7 @@ class ONMTDataset(torchtext.data.Dataset):
                  src_seq_length=0, tgt_seq_length=0,
                  src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                  use_filter_pred=True, dynamic_dict=True,
-                 src_img_dir=None, read_from_file=False,
+                 src_img_dir=None, read_from_file=True,
                  **kwargs):
         """
         Create a translation dataset given paths and fields.
