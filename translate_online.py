@@ -32,10 +32,10 @@ class OnlineTranslator:
                   batch_size=32, n_best=3, min_score=0,
                   round_score=False, round_to=3):
         self.translator.opt.n_best = n_best
-        data = onmt.IO.ONMTDataset(sentences, None,
-                                   self.translator.fields,
-                                   use_filter_pred=False,
-                                   read_from_file=False)
+
+        data = onmt.IO.build_dataset_live(self.translator.fields,
+                                          sentences,
+                                          use_filter_pred=False)
 
         test_data = onmt.IO.OrderedIterator(dataset=data, device=device,
                                             batch_size=batch_size, train=False,
@@ -44,7 +44,7 @@ class OnlineTranslator:
         pred_score_total, pred_words_total = 0, 0
         sents_preds = []
         for batch in test_data:
-            pred_batch, gold_batch, pred_scores, gold_scores, attn, src \
+            pred_batch, gold_batch, pred_scores, gold_scores, attn, src, indices \
                 = self.translator.translate(batch, data)
             pred_score_total += sum(score[0] for score in pred_scores)
             pred_words_total += sum(len(x[0]) for x in pred_batch)
