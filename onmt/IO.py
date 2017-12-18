@@ -267,9 +267,6 @@ class OrderedIterator(torchtext.data.Iterator):
                                           self.batch_size_fn):
                 self.batches.append(sorted(b, key=self.sort_key))
 
-    def __len__(self):
-        return None
-
 
 class ONMTDataset(torchtext.data.Dataset):
     """
