@@ -4,3 +4,4 @@ torchtext==0.1.1
 future
 sanic
 sanic_cors
+nltk
