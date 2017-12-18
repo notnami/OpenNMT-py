@@ -20,6 +20,8 @@ from sanic.request import Request
 from sanic.exceptions import abort, InvalidUsage, ServerError
 from sanic.log import error_logger
 
+import nltk
+
 app = Sanic(__name__)
 
 
@@ -30,7 +32,13 @@ class OnlineTranslator:
 
     def translate(self, sentences, device=-1,
                   batch_size=32, n_best=3, min_score=0,
-                  round_score=False, round_to=3):
+                  round_score=False, round_to=3,
+                  tokenize=False):
+
+        if tokenize:
+            sentences = (' '.join(nltk.word_tokenize(sentence))
+                         for sentence in sentences)
+
         self.translator.opt.n_best = n_best
 
         data = onmt.IO.build_dataset_live(self.translator.fields,
@@ -111,10 +119,12 @@ async def predict(request: Request):
     n_best = data.get('n_best', 3)
     min_score = data.get('min_score', -2.0)
     round_score = data.get('round_score', False)
+    should_tokenize = data.get('tokenize', True)
 
     results = online_translator.translate(documents, device=opt.gpu,
                                           batch_size=batch_size, n_best=n_best,
-                                          min_score=min_score, round_score=round_score)
+                                          min_score=min_score, round_score=round_score,
+                                          tokenize=should_tokenize)
     return response.json({'predictions': results})
 
 
