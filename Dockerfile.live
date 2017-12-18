@@ -10,4 +10,6 @@ COPY . .
 RUN python3 -m pip install --no-cache-dir \
 http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp36-cp36m-linux_x86_64.whl
 
+RUN python3 -m nltk.downloader punkt
+
 CMD ["python", "translate_online.py", "-model", "model.pt"]
