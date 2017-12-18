@@ -1,0 +1,11 @@
+*.txt
+!requirements.txt
+
+tools/
+data/
+.env/
+nmt_deployment/
+
+*.pt
+!model.pt
+

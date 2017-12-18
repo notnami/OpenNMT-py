@@ -1,0 +1,6 @@
+FROM python:3.6-onbuild
+
+RUN python3 -m pip install \
+http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp36-cp36m-linux_x86_64.whl
+
+CMD ["python", "translate_online.py", "-model", "model.pt"]
