@@ -8,7 +8,7 @@ import torchtext.data
 import torchtext.vocab
 
 from onmt.io.DatasetBase import PAD_WORD, BOS_WORD, EOS_WORD
-from onmt.io.TextDataset import TextDataset
+from onmt.io.TextDataset import TextDataset, LiveTextDataset
 from onmt.io.ImageDataset import ImageDataset
 from onmt.io.AudioDataset import AudioDataset
 
@@ -213,6 +213,31 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
                                normalize_audio=normalize_audio,
                                use_filter_pred=use_filter_pred)
 
+    return dataset
+
+
+def build_dataset_live(fields, documents,
+                       seq_length=0, seq_length_trunc=0,
+                       dynamic_dict=True, use_filter_pred=True,
+                       src_seq_length=0, tgt_seq_length=0,
+                       src_seq_length_trunc=0, tgt_seq_length_trunc=0):
+    # Build src/tgt examples iterator from corpus files, also extract
+    # number of features.
+    src_examples_iter, num_src_feats = \
+        LiveTextDataset.make_text_examples_nfeats_tpl(
+            documents, src_seq_length_trunc, "src")
+
+    # We don't get targets in live prediction
+    tgt_examples_iter = None
+    num_tgt_feats = 0
+
+    dataset = LiveTextDataset(fields, src_examples_iter,
+                              tgt_examples_iter,
+                              num_src_feats, num_tgt_feats,
+                              src_seq_length=src_seq_length,
+                              tgt_seq_length=tgt_seq_length,
+                              dynamic_dict=dynamic_dict,
+                              use_filter_pred=use_filter_pred)
     return dataset
 
 

@@ -150,3 +150,4 @@ class Translation(object):
                 output += "[{:.4f}] {}\n".format(score, sent)
 
         return output
+
