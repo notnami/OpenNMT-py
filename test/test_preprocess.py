@@ -1,11 +1,14 @@
 import argparse
 import copy
 import unittest
+import glob
+import os
 from collections import Counter
 
 import torchtext
 
 import onmt
+import onmt.io
 import opts
 import preprocess
 
@@ -14,13 +17,15 @@ parser = argparse.ArgumentParser(description='preprocess.py')
 opts.preprocess_opts(parser)
 
 
+SAVE_DATA_PREFIX = 'data/test_preprocess'
+
 default_opts = [
     '-data_type', 'text',
     '-train_src', 'data/src-train.txt',
     '-train_tgt', 'data/tgt-train.txt',
     '-valid_src', 'data/src-val.txt',
     '-valid_tgt', 'data/tgt-val.txt',
-    '-save_data', 'data/save'
+    '-save_data', SAVE_DATA_PREFIX
 ]
 
 opt = parser.parse_known_args(default_opts)[0]
@@ -32,23 +37,23 @@ class TestData(unittest.TestCase):
         self.opt = opt
 
     def dataset_build(self, opt):
-        fields = onmt.IO.get_fields("text", 0, 0)
+        fields = onmt.io.get_fields("text", 0, 0)
 
-        train = preprocess.build_dataset('train', fields, opt)
+        trains = preprocess.build_save_dataset('train', fields, opt)
 
-        onmt.IO.build_vocab(train, opt.data_type, opt.share_vocab,
-                            opt.src_vocab_size,
-                            opt.src_words_min_frequency,
-                            opt.tgt_vocab_size,
-                            opt.tgt_words_min_frequency)
+        preprocess.build_save_vocab(trains, fields, opt)
 
-        preprocess.build_dataset('valid', fields, opt)
+        preprocess.build_save_dataset('valid', fields, opt)
+
+        # Remove the generated *pt files.
+        for pt in glob.glob(SAVE_DATA_PREFIX + '*.pt'):
+            os.remove(pt)
 
     def test_merge_vocab(self):
         va = torchtext.vocab.Vocab(Counter('abbccc'))
         vb = torchtext.vocab.Vocab(Counter('eeabbcccf'))
 
-        merged = onmt.IO.merge_vocabs([va, vb], 2)
+        merged = onmt.io.merge_vocabs([va, vb], 2)
 
         self.assertEqual(Counter({'c': 6, 'b': 4, 'a': 2, 'e': 2, 'f': 1}),
                          merged.freqs)
@@ -56,25 +61,26 @@ class TestData(unittest.TestCase):
         self.assertTrue('b' in merged.itos)
 
 
-def _add_test(paramSetting, methodname):
+def _add_test(param_setting, methodname):
     """
     Adds a Test to TestData according to settings
 
     Args:
-        paramSetting: list of tuples of (param, setting)
+        param_setting: list of tuples of (param, setting)
         methodname: name of the method that gets called
     """
 
     def test_method(self):
-        if paramSetting:
+        if param_setting:
             opt = copy.deepcopy(self.opt)
-            for param, setting in paramSetting:
+            for param, setting in param_setting:
                 setattr(opt, param, setting)
         else:
             opt = self.opt
         getattr(self, methodname)(opt)
-    if paramSetting:
-        name = 'test_' + methodname + "_" + "_".join(str(paramSetting).split())
+    if param_setting:
+        name = 'test_' + methodname + "_" + "_".join(
+            str(param_setting).split())
     else:
         name = 'test_' + methodname + '_standard'
     setattr(TestData, name, test_method)

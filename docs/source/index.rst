@@ -4,14 +4,19 @@
 
       main.md
       quickstart.md
+      onmt.rst
+      onmt.modules.rst
+      onmt.translation.rst
+      onmt.io.rst
+      Library.md
+
+      options/preprocess.md
+      options/train.md
+      options/translate.md
       extended.md
       Summarization.md
       im2text.md
       speech2text.md
       FAQ.md
-      options/preprocess.md
-      options/train.md
-      options/translate.md
-      onmt.rst
-      onmt.modules.rst
       CONTRIBUTORS.md
+      ref.rst

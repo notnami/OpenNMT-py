@@ -16,12 +16,18 @@ import torch
 import torch.nn as nn
 
 import onmt
+import onmt.io
 import onmt.modules
 
 
 class Statistics(object):
     """
-    Train/validate loss statistics.
+    Accumulator for loss statistics.
+    Currently calculates:
+
+    * accuracy
+    * perplexity
+    * elapsed time
     """
     def __init__(self, loss=0, n_words=0, n_correct=0):
         self.loss = loss
@@ -45,6 +51,14 @@ class Statistics(object):
         return time.time() - self.start_time
 
     def output(self, epoch, batch, n_batches, start):
+        """Write out statistics to stdout.
+
+        Args:
+           epoch (int): current epoch
+           batch (int): current batch
+           n_batch (int): total batches
+           start (int): start time of epoch.
+        """
         t = self.elapsed_time()
         print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; " +
                "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
@@ -65,21 +79,27 @@ class Statistics(object):
 
 
 class Trainer(object):
+    """
+    Class that controls the training process.
+
+    Args:
+            model(:py:class:`onmt.Model.NMTModel`): translation model to train
+            train_iter: training data iterator
+            valid_iter: validate data iterator
+            train_loss(:obj:`onmt.Loss.LossComputeBase`):
+               training loss computation
+            valid_loss(:obj:`onmt.Loss.LossComputeBase`):
+               training loss computation
+            optim(:obj:`onmt.Optim.Optim`):
+               the optimizer responsible for update
+            trunc_size(int): length of truncated back propagation through time
+            shard_size(int): compute loss in shards of this size for efficiency
+            data_type(string): type of the source input: [text|img|audio]
+    """
+
     def __init__(self, model, train_iter, valid_iter,
                  train_loss, valid_loss, optim,
-                 trunc_size, shard_size, data_type='text'):
-        """
-        Args:
-            model: the seq2seq model.
-            train_iter: the train data iterator.
-            valid_iter: the validate data iterator.
-            train_loss: the train side LossCompute object for computing loss.
-            valid_loss: the valid side LossCompute object for computing loss.
-            optim: the optimizer responsible for lr update.
-            trunc_size: a batch is divided by several truncs of this size.
-            shard_size: compute loss in shards of this size for efficiency.
-            data_type: type of the source input. Options are [text|img].
-        """
+                 trunc_size=0, shard_size=32, data_type='text'):
         # Basic attributes.
         self.model = model
         self.train_iter = train_iter
@@ -89,14 +109,20 @@ class Trainer(object):
         self.optim = optim
         self.trunc_size = trunc_size
         self.shard_size = shard_size
-        self.model_type = self.model.model_type
         self.data_type = data_type
 
         # Set model in training mode.
         self.model.train()
 
     def train(self, epoch, report_func=None):
-        """ Called for each epoch to train. """
+        """ Train next epoch.
+        Args:
+            epoch(int): the epoch number
+            report_func(fn): function for logging
+
+        Returns:
+            stats (:obj:`onmt.Statistics`): epoch loss statistics
+        """
         total_stats = Statistics()
         report_stats = Statistics()
 
@@ -106,14 +132,14 @@ class Trainer(object):
             trunc_size = self.trunc_size if self.trunc_size else target_size
 
             dec_state = None
-            src = onmt.IO.make_features(batch, 'src', self.data_type)
+            src = onmt.io.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
                 report_stats.n_src_words += src_lengths.sum()
             else:
                 src_lengths = None
 
-            tgt_outer = onmt.IO.make_features(batch, 'tgt')
+            tgt_outer = onmt.io.make_features(batch, 'tgt')
 
             for j in range(0, target_size-1, trunc_size):
                 # 1. Create truncated target.
@@ -146,20 +172,24 @@ class Trainer(object):
         return total_stats
 
     def validate(self):
-        """ Called for each epoch to validate. """
+        """ Validate model.
+
+        Returns:
+            :obj:`onmt.Statistics`: validation loss statistics
+        """
         # Set model in validating mode.
         self.model.eval()
 
         stats = Statistics()
 
         for batch in self.valid_iter:
-            src = onmt.IO.make_features(batch, 'src', self.data_type)
+            src = onmt.io.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
             else:
                 src_lengths = None
 
-            tgt = onmt.IO.make_features(batch, 'tgt')
+            tgt = onmt.io.make_features(batch, 'tgt')
 
             # F-prop through the model.
             outputs, attns, _ = self.model(src, tgt, src_lengths)
@@ -177,11 +207,17 @@ class Trainer(object):
         return stats
 
     def epoch_step(self, ppl, epoch):
-        """ Called for each epoch to update learning rate. """
-        return self.optim.updateLearningRate(ppl, epoch)
+        return self.optim.update_learning_rate(ppl, epoch)
 
     def drop_checkpoint(self, opt, epoch, fields, valid_stats):
-        """ Called conditionally each epoch to save a snapshot. """
+        """ Save a resumable checkpoint.
+
+        Args:
+            opt (dict): option object
+            epoch (int): epoch number
+            fields (dict): fields and vocabulary
+            valid_stats : statistics of last validation run
+        """
         real_model = (self.model.module
                       if isinstance(self.model, nn.DataParallel)
                       else self.model)
@@ -196,7 +232,7 @@ class Trainer(object):
         checkpoint = {
             'model': model_state_dict,
             'generator': generator_state_dict,
-            'vocab': onmt.IO.save_vocab(fields),
+            'vocab': onmt.io.save_fields_to_vocab(fields),
             'opt': opt,
             'epoch': epoch,
             'optim': self.optim,

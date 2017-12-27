@@ -1,5 +1,7 @@
 # OpenNMT-py: Open-Source Neural Machine Translation
 
+[![Build Status](https://travis-ci.org/OpenNMT/OpenNMT-py.svg?branch=master)](https://travis-ci.org/OpenNMT/OpenNMT-py)
+
 This is a [Pytorch](https://github.com/pytorch/pytorch)
 port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
 an open-source (MIT) neural machine translation system. It is designed to be research friendly to try out new ideas in translation, summary, image-to-text, morphology, and many other domains.
@@ -18,7 +20,6 @@ Table of Contents
   * [Requirements](#requirements)
   * [Features](#features)
   * [Quickstart](#quickstart)
-  * [Advanced](#advanced)
   * [Citation](#citation)
  
 ## Requirements
@@ -32,19 +33,19 @@ pip install -r requirements.txt
 
 The following OpenNMT features are implemented:
 
-- [data preprocessing](http://opennmt.net/OpenNMT-py/options/preprocess/)
-- [Inference (translation) with batching and beam search](http://opennmt.net/OpenNMT-py/options/translate/)
-- [Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types](http://opennmt.net/OpenNMT-py/options/train/#model-encoder-decoder)
-- [TensorBoard/Crayon logging](http://opennmt.net/OpenNMT-py/options/train/#logging)
-- [Source word features](http://opennmt.net/OpenNMT-py/options/train/#model-embeddings)
-- [Pretrained Embeddings](http://opennmt.net/OpenNMT-py/FAQ/#how-do-i-use-pretrained-embeddings-eg-glove)
-- [Copy and Coverage Attention](http://opennmt.net/OpenNMT-py/options/train/#model-attention)
-- [Image-to-text processing](http://opennmt.net/OpenNMT-py/im2text/)
-- [Speech-to-text processing](http://opennmt.net/OpenNMT-py/speech2text/)
+- [data preprocessing](http://opennmt.net/OpenNMT-py/options/preprocess.html)
+- [Inference (translation) with batching and beam search](http://opennmt.net/OpenNMT-py/options/translate.html)
+- [Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types](http://opennmt.net/OpenNMT-py/options/train.html#model-encoder-decoder)
+- [TensorBoard/Crayon logging](http://opennmt.net/OpenNMT-py/options/train.html#logging)
+- [Source word features](http://opennmt.net/OpenNMT-py/options/train.html#model-embeddings)
+- [Pretrained Embeddings](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove)
+- [Copy and Coverage Attention](http://opennmt.net/OpenNMT-py/options/train.html#model-attention)
+- [Image-to-text processing](http://opennmt.net/OpenNMT-py/im2text.html)
+- [Speech-to-text processing](http://opennmt.net/OpenNMT-py/speech2text.html)
 
 Beta Features (committed):
 - multi-GPU
-- ["Attention is all you need"](http://opennmt.net/OpenNMT-py/FAQ/#how-do-i-use-the-transformer-model)
+- ["Attention is all you need"](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-the-transformer-model)
 - Structured attention
 - [Conv2Conv convolution model]
 - SRU "RNNs faster than CNN" paper
